@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { verificarToken, verificarDono } = require('../middlewares/authMiddleware');
+const ctrl = require('../controllers/exerciciosController');
+const auth = require('../middlewares/authMiddleware');
 
-router.post('/', verificarToken, (req, res) => res.status(201).json({ mensagem: 'Exercício criado' }));
-router.get('/', (req, res) => res.status(200).json([]));
-router.get('/:id', (req, res) => res.status(200).json({}));
-router.put('/:id', verificarToken, verificarDono, (req, res) => res.status(200).json({ mensagem: 'Exercício atualizado' }));
-router.delete('/:id', verificarToken, verificarDono, (req, res) => res.status(204).send());
+router.post('/', auth, ctrl.criarExercicio);       // Criar
+router.get('/', auth, ctrl.listarExercicios);      // Listar
+router.get('/:id', auth, ctrl.detalharExercicio);  // Detalhar
+router.put('/:id', auth, ctrl.atualizarExercicio); // Atualizar
+router.delete('/:id', auth, ctrl.excluirExercicio);// Excluir
 
 module.exports = router;
