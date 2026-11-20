@@ -3,13 +3,19 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, SafeArea
 
 export default function App() {
   const [token, setToken] = useState(null);
-  const [email, setEmail] = useState('aluno@academia.com');
-  const [senha, setSenha] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [logRequisicao, setLogRequisicao] = useState('');
 
-  // Banco em memória
-  const [exercicios, setExercicios] = useState([
+  // Estado para controlar qual aba de treino está ativa ('treinoA' ou 'treinoB')
+  const [treinoAtivo, setTreinoAtivo] = useState('treinoA');
+
+  // Banco em memória separado por Treinos
+  const [exerciciosTreinoA, setExerciciosTreinoA] = useState([
     { id: '1', nome: 'Supino Reto', grupo: 'Peito', series: '4x12' }
+  ]);
+  const [exerciciosTreinoB, setExerciciosTreinoB] = useState([
+    { id: '2', nome: 'Puxada Alta', grupo: 'Costas', series: '4x10' }
   ]);
 
   // Estados para Criar e Atualizar
@@ -38,31 +44,34 @@ export default function App() {
   const salvarExercicio = () => {
     if (!nome || !grupo || !series) return alert('Preencha todos os campos');
 
+    const listaAtual = treinoAtivo === 'treinoA' ? exerciciosTreinoA : exerciciosTreinoB;
+    const setListaAtual = treinoAtivo === 'treinoA' ? setExerciciosTreinoA : setExerciciosTreinoB;
+
     if (idEditando) {
       // ATUALIZAR (PUT)
-      setExercicios(exercicios.map(item => 
+      setListaAtual(listaAtual.map(item => 
         item.id === idEditando ? { ...item, nome, grupo, series } : item
       ));
-      registrarLog('PUT', `/exercicios/${idEditando}`);
+      registrarLog('PUT', `/${treinoAtivo}/exercicios/${idEditando}`);
       setIdEditando(null);
     } else {
       // CRIAR (POST)
       const novo = { id: String(Date.now()).slice(-4), nome, grupo, series };
-      setExercicios([...exercicios, novo]);
-      registrarLog('POST', '/exercicios');
+      setListaAtual([...listaAtual, novo]);
+      registrarLog('POST', `/${treinoAtivo}/exercicios`);
     }
     setNome(''); setGrupo(''); setSeries('');
   };
 
   // 3. LISTAR (GET)
   const listarTodos = () => {
-    registrarLog('GET', '/exercicios');
+    registrarLog('GET', `/${treinoAtivo}/exercicios`);
   };
 
   // 4. DETALHAR UM ELEMENTO (GET /:id)
   const detalharItem = (item) => {
     setItemDetalhe(item);
-    registrarLog('GET', `/exercicios/${item.id}`);
+    registrarLog('GET', `/${treinoAtivo}/exercicios/${item.id}`);
   };
 
   // Preparar edição
@@ -75,30 +84,53 @@ export default function App() {
 
   // 6. EXCLUIR (DELETE /:id)
   const excluirItem = (id) => {
-    setExercicios(exercicios.filter(item => item.id !== id));
-    registrarLog('DELETE', `/exercicios/${id}`);
+    if (treinoAtivo === 'treinoA') {
+      setExerciciosTreinoA(exerciciosTreinoA.filter(item => item.id !== id));
+    } else {
+      setExerciciosTreinoB(exerciciosTreinoB.filter(item => item.id !== id));
+    }
+    registrarLog('DELETE', `/${treinoAtivo}/exercicios/${id}`);
   };
 
   if (!token) {
     return (
       <SafeAreaView style={s.container}>
         <View style={s.center}>
-          <Text style={s.logo}>🏋️‍♂️ Login da API</Text>
+          <Text style={s.logo}>🏋️‍♂️ Login Academia </Text>
           <TextInput style={s.input} placeholder="E-mail" placeholderTextColor="#888" value={email} onChangeText={setEmail} />
           <TextInput style={s.input} placeholder="Senha" placeholderTextColor="#888" secureTextEntry value={senha} onChangeText={setSenha} />
           <TouchableOpacity style={s.btn} onPress={fazerLogin}>
-            <Text style={s.btnText}>POST /auth/login (Obter Token)</Text>
+            <Text style={s.btnText}>Entrar</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Define qual lista mostrar com base na aba ativa
+  const dadosAtuais = treinoAtivo === 'treinoA' ? exerciciosTreinoA : exerciciosTreinoB;
+
   return (
     <SafeAreaView style={s.container}>
       <View style={s.header}>
         <Text style={s.title}>CRUD + JWT Ativo</Text>
         <TouchableOpacity onPress={() => setToken(null)}><Text style={s.sair}>Sair</Text></TouchableOpacity>
+      </View>
+
+      {/* Seletor de Opções (Treino 1 e Treino 2) */}
+      <View style={s.tabContainer}>
+        <TouchableOpacity 
+          style={[s.tabButton, treinoAtivo === 'treinoA' && s.tabActive]} 
+          onPress={() => { setTreinoAtivo('treinoA'); setIdEditando(null); setNome(''); setGrupo(''); setSeries(''); }}
+        >
+          <Text style={[s.tabText, treinoAtivo === 'treinoA' && s.tabTextActive]}>Treino 1 (A)</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[s.tabButton, treinoAtivo === 'treinoB' && s.tabActive]} 
+          onPress={() => { setTreinoAtivo('treinoB'); setIdEditando(null); setNome(''); setGrupo(''); setSeries(''); }}
+        >
+          <Text style={[s.tabText, treinoAtivo === 'treinoB' && s.tabTextActive]}>Treino 2 (B)</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Caixa de Log mostrando o Token sendo usado nas requisições */}
@@ -125,7 +157,7 @@ export default function App() {
 
       {/* Lista de Elementos */}
       <FlatList
-        data={exercicios}
+        data={dadosAtuais}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={s.card}>
@@ -152,7 +184,7 @@ export default function App() {
       <Modal visible={!!itemDetalhe} transparent animationType="fade">
         <View style={s.modalBg}>
           <View style={s.modalBox}>
-            <Text style={s.modalTitle}>Detalhes (GET /exercicios/{itemDetalhe?.id})</Text>
+            <Text style={s.modalTitle}>Detalhes ({treinoAtivo.toUpperCase()} / {itemDetalhe?.id})</Text>
             <Text style={s.modalItem}>ID: {itemDetalhe?.id}</Text>
             <Text style={s.modalItem}>Exercício: {itemDetalhe?.nome}</Text>
             <Text style={s.modalItem}>Grupo Muscular: {itemDetalhe?.grupo}</Text>
@@ -174,6 +206,11 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   sair: { color: '#ff4444', fontWeight: 'bold' },
+  tabContainer: { flexDirection: 'row', marginBottom: 10, backgroundColor: '#1e1e1e', borderRadius: 8, padding: 4 },
+  tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 6 },
+  tabActive: { backgroundColor: '#007AFF' },
+  tabText: { color: '#888', fontWeight: 'bold', fontSize: 13 },
+  tabTextActive: { color: '#fff' },
   logBox: { backgroundColor: '#1a261d', padding: 10, borderRadius: 8, marginBottom: 12, borderLeftWidth: 4, borderLeftColor: '#4CD964' },
   logTitle: { color: '#4CD964', fontWeight: 'bold', fontSize: 12, marginBottom: 3 },
   logText: { color: '#ccc', fontSize: 11, fontFamily: 'monospace' },
