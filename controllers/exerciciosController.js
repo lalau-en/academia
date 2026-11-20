@@ -1,33 +1,27 @@
-const treinoService = require('../services/treinoService');
+const exercicioService = require('../services/exercicioService');
 
-const criarTreino = async (req, res) => {
+const criarExercicio = async (req, res) => {
     try {
-        const treino = await treinoService.criar(req.body, req.usuario.id);
-        res.status(201).json(treino);
+        const exercicio = await exercicioService.criar(req.body);
+        res.status(201).json(exercicio);
     } catch (erro) {
         res.status(400).json({ erro: erro.message });
     }
 };
 
-const listarTreinos = async (req, res) => {
-    const treinos = await treinoService.listarTodos();
-    res.status(200).json(treinos);
+const listarExercicios = async (req, res) => {
+    const exercicios = await exercicioService.listarTodos();
+    res.status(200).json(exercicios);
 };
 
-const buscarPorId = async (req, res) => {
-    const treino = await treinoService.buscarPorId(req.params.id);
-    if (!treino) return res.status(404).json({ erro: 'Treino não encontrado' });
-    res.status(200).json(treino);
-};
-
-const atualizarTreino = async (req, res) => {
-    const atualizado = await treinoService.atualizar(req.params.id, req.body);
+const atualizarExercicio = async (req, res) => {
+    const atualizado = await exercicioService.atualizar(req.params.id, req.body);
     res.status(200).json(atualizado);
 };
 
-const deletarTreino = async (req, res) => {
-    await treinoService.deletar(req.params.id);
+const deletarExercicio = async (req, res) => {
+    await exercicioService.deletar(req.params.id);
     res.status(204).send();
 };
 
-module.exports = { criarTreino, listarTreinos, buscarPorId, atualizarTreino, deletarTreino };
+module.exports = { criarExercicio, listarExercicios, atualizarExercicio, deletarExercicio };
