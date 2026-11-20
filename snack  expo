@@ -1,0 +1,124 @@
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, SafeAreaView } from 'react-native';
+
+export default function App() {
+  const [token, setToken] = useState(null);
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [aba, setAba] = useState('treinos');
+
+  const [exercicios, setExercicios] = useState([
+    { id: '1', nome: 'Supino Reto', grupo: 'Peito' }
+  ]);
+  const [nomeEx, setNomeEx] = useState('');
+  const [grupoEx, setGrupoEx] = useState('');
+
+  const [treinos, setTreinos] = useState([
+    { id: '1', nome: 'Treino A', duracao: 45, concluido: false }
+  ]);
+  const [nomeTr, setNomeTr] = useState('');
+  const [durTr, setDurTr] = useState('');
+
+  const concluidos = treinos.filter(t => t.concluido).length;
+  const tempoTotal = treinos.filter(t => t.concluido).reduce((acc, t) => acc + Number(t.duracao), 0);
+
+  if (!token) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.center}>
+          <Text style={s.logo}>🏋️‍♂️ Academia App</Text>
+          <TextInput style={s.input} placeholder="E-mail" placeholderTextColor="#888" value={email} onChangeText={setEmail} />
+          <TextInput style={s.input} placeholder="Senha" placeholderTextColor="#888" secureTextEntry value={senha} onChangeText={setSenha} />
+          <TouchableOpacity style={s.btn} onPress={() => email && senha ? setToken('ok') : alert('Preencha tudo!')}>
+            <Text style={s.btnText}>Entrar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <Text style={s.title}>Painel</Text>
+        <TouchableOpacity onPress={() => setToken(null)}><Text style={s.sair}>Sair</Text></TouchableOpacity>
+      </View>
+
+      <View style={s.stats}>
+        <Text style={s.statText}>Concluídos: {concluidos}/{treinos.length}</Text>
+        <Text style={s.statText}>Tempo: {tempoTotal} min</Text>
+      </View>
+
+      <View style={s.tabs}>
+        <TouchableOpacity style={[s.tab, aba === 'treinos' && s.active]} onPress={() => setAba('treinos')}><Text style={s.tabText}>Treinos</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.tab, aba === 'exercicios' && s.active]} onPress={() => setAba('exercicios')}><Text style={s.tabText}>Exercícios</Text></TouchableOpacity>
+      </View>
+
+      {aba === 'treinos' ? (
+        <View style={{ flex: 1 }}>
+          <TextInput style={s.input} placeholder="Nome do Treino" placeholderTextColor="#888" value={nomeTr} onChangeText={setNomeTr} />
+          <View style={s.row}>
+            <TextInput style={[s.input, { flex: 1, marginRight: 8, marginBottom: 0 }]} placeholder="Minutos" placeholderTextColor="#888" keyboardType="numeric" value={durTr} onChangeText={setDurTr} />
+            <TouchableOpacity style={s.btnSmall} onPress={() => { if(nomeTr && durTr) { setTreinos([...treinos, { id: String(Date.now()), nome: nomeTr, duracao: durTr, concluido: false }]); setNomeTr(''); setDurTr(''); } }}><Text style={s.btnText}>Adicionar</Text></TouchableOpacity>
+          </View>
+          <FlatList data={treinos} keyExtractor={item => item.id} renderItem={({item}) => (
+            <View style={[s.card, item.concluido && s.doneCard]}>
+              <View>
+                <Text style={[s.cardTitle, item.concluido && s.doneText]}>{item.nome} {item.concluido ? '✅' : ''}</Text>
+                <Text style={s.sub}>⏱ {item.duracao} min</Text>
+              </View>
+              <View style={s.row}>
+                <TouchableOpacity style={[s.action, item.concluido ? s.warn : s.success]} onPress={() => setTreinos(treinos.map(t => t.id === item.id ? {...t, concluido: !t.concluido} : t))}><Text style={s.actionText}>{item.concluido ? 'Desfazer' : 'OK'}</Text></TouchableOpacity>
+                <TouchableOpacity style={[s.action, s.danger]} onPress={() => setTreinos(treinos.filter(t => t.id !== item.id))}><Text style={s.actionText}>X</Text></TouchableOpacity>
+              </View>
+            </View>
+          )} />
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          <TextInput style={s.input} placeholder="Nome do Exercício" placeholderTextColor="#888" value={nomeEx} onChangeText={setNomeEx} />
+          <View style={s.row}>
+            <TextInput style={[s.input, { flex: 1, marginRight: 8, marginBottom: 0 }]} placeholder="Grupo Muscular" placeholderTextColor="#888" value={grupoEx} onChangeText={setGrupoEx} />
+            <TouchableOpacity style={s.btnSmall} onPress={() => { if(nomeEx && grupoEx) { setExercicios([...exercicios, { id: String(Date.now()), nome: nomeEx, grupo: grupoEx }]); setNomeEx(''); setGrupoEx(''); } }}><Text style={s.btnText}>Adicionar</Text></TouchableOpacity>
+          </View>
+          <FlatList data={exercicios} keyExtractor={item => item.id} renderItem={({item}) => (
+            <View style={s.card}>
+              <View><Text style={s.cardTitle}>{item.nome}</Text><Text style={s.sub}>Grupo: {item.grupo}</Text></View>
+              <TouchableOpacity style={[s.action, s.danger]} onPress={() => setExercicios(exercicios.filter(e => e.id !== item.id))}><Text style={s.actionText}>Excluir</Text></TouchableOpacity>
+            </View>
+          )} />
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#121212', padding: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  logo: { fontSize: 26, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+  input: { width: '100%', backgroundColor: '#1e1e1e', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#333' },
+  btn: { width: '100%', backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center' },
+  btnSmall: { backgroundColor: '#007AFF', paddingHorizontal: 15, justifyContent: 'center', borderRadius: 8 },
+  btnText: { color: '#fff', fontWeight: 'bold' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  sair: { color: '#ff4444', fontWeight: 'bold' },
+  stats: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#1e1e1e', padding: 10, borderRadius: 8, marginBottom: 10 },
+  statText: { color: '#4CD964', fontWeight: 'bold' },
+  tabs: { flexDirection: 'row', marginBottom: 10, backgroundColor: '#1e1e1e', borderRadius: 6, padding: 3 },
+  tab: { flex: 1, padding: 8, alignItems: 'center', borderRadius: 4 },
+  active: { backgroundColor: '#007AFF' },
+  tabText: { color: '#aaa', fontWeight: '600' },
+  row: { flexDirection: 'row', marginBottom: 10 },
+  card: { backgroundColor: '#1e1e1e', padding: 12, borderRadius: 8, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderLeftWidth: 4, borderLeftColor: '#007AFF' },
+  doneCard: { backgroundColor: '#162218', borderLeftColor: '#4CD964', opacity: 0.85 },
+  cardTitle: { color: '#fff', fontWeight: 'bold' },
+  doneText: { textDecorationLine: 'line-through', color: '#888' },
+  sub: { color: '#888', fontSize: 12, marginTop: 2 },
+  action: { padding: 8, borderRadius: 6, marginLeft: 5 },
+  success: { backgroundColor: '#28a745' },
+  warn: { backgroundColor: '#d39e00' },
+  danger: { backgroundColor: '#dc3545' },
+  actionText: { color: '#fff', fontSize: 12, fontWeight: 'bold' }
+});
